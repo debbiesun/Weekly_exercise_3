@@ -1,18 +1,20 @@
 ---
 title: 'Weekly Exercises #3'
 author: "Debbie Sun"
-output: 
+output:
+  pdf_document:
+    toc: yes
   html_document:
-    keep_md: TRUE
-    toc: TRUE
-    toc_float: TRUE
+    code_download: yes
     df_print: paged
-    code_download: true
+    keep_md: yes
+    toc: yes
+    toc_float: yes
 ---
 
 
 ```{r setup, include=FALSE}
-#knitr::opts_chunk$set(echo = TRUE, error=TRUE, message=FALSE, warning=FALSE)
+knitr::opts_chunk$set(echo = TRUE, error=TRUE, message=FALSE, warning=FALSE)
 ```
 
 ```{r libraries}
@@ -108,6 +110,7 @@ plant_min <- plant_date_loc%>%
   group_by(vegetable,variety)%>%
   summarize(first_day = min(date))
 ```
+
 
 ```{r}
 garden_harvest%>%
@@ -213,11 +216,10 @@ Trips%>%
   
   9. A bar graph of the events versus day of the week. Put day on the y-axis.
 
-
   
 ```{r}
 Trips%>%
-  mutate(day = wday(sdate))%>%
+  mutate(day = weekdays(sdate))%>%
   ggplot(aes(y=day))+
   geom_bar()+
   labs(x = "Number of rentals", y = "Day of the week",
@@ -264,7 +266,7 @@ Trips%>%
   labs(x = "time of the day", y = "density of rental", title = "Daily rental pattern for casual and registered clients in a week")
 ```
 
-This graph can better illustrate the relationship between two groups of customers; however, 
+This graph can better illustrate the relationship between two groups of customers. 
   
   13. Add a new variable to the dataset called `weekend` which will be "weekend" if the day is Saturday or Sunday and  "weekday" otherwise (HINT: use the `ifelse()` function and the `wday()` function from `lubridate`). Then, update the graph from the previous problem by faceting on the new `weekend` variable. 
   
@@ -339,7 +341,6 @@ New<- Trips%>%
   head(10)
 New
 
-
 ```
   
   
@@ -356,8 +357,6 @@ Trips%>%
   
   
   
-
-  
   19. Build on the code from the previous problem (ie. copy that code below and then %>% into the next step.) and group the trips by client type and day of the week (use the name, not the number). Find the proportion of trips by day within each client type (ie. the proportions for all 7 days within each client type add up to 1). Display your results so day of week is a column and there is a column for each client type. Interpret your results.
   
   
@@ -368,9 +367,12 @@ Trips%>%
              by = c("sstation","date"))%>%
   mutate(day =  weekdays(date))%>%
   group_by(client,day)%>%
-  summarize(n = n())
-
-
+  count()%>%
+  group_by(client)%>%
+  mutate(prop = n/sum(n))%>%
+  pivot_wider(id_cols  = day,
+              names_from = client,
+              values_from = prop)
 
 ```
   
@@ -380,6 +382,8 @@ Trips%>%
 ## GitHub link
 
   20. Below, provide a link to your GitHub page with this set of Weekly Exercises. Specifically, if the name of the file is 03_exercises.Rmd, provide a link to the 03_exercises.md file, which is the one that will be most readable on GitHub.
+  
+[Github](https://github.com/debbiesun/Weekly_exercise_3)
 
 ## Challenge problem! 
 
