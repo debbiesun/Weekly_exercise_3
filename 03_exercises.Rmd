@@ -128,22 +128,33 @@ We can use first summarize the total harvest in pounds for each vegetable variet
 ```{r}
 garden_harvest%>%
   filter(vegetable =="tomatoes")%>%
-  mutate(variety = fct_reorder(variety, filter, .desc = FALSE))%>%
+  mutate(variety = fct_reorder(variety, date, min, .desc = FALSE))%>%
   group_by(variety)%>%
   summarize(count = n(),
-            total = sum(weight))
+            total = sum(weight)*0.00220462)%>%
+  ggplot(aes(y = variety, x =total))+
+  geom_col()
+
+
 ```
 
   5. In the `garden_harvest` data, create two new variables: one that makes the varieties lowercase and another that finds the length of the variety name. Arrange the data by vegetable and length of variety name (smallest to largest), with one row for each vegetable variety. HINT: use `str_to_lower()`, `str_length()`, and `distinct()`.
   
 ```{r}
-
+garden_harvest%>%
+  mutate(lower  = str_to_lower(variety))%>%
+  mutate(length = str_length(variety))%>%
+  arrange(vegetable,length)%>%
+  distinct(variety, .keep_all = TRUE)
 ```
 
   6. In the `garden_harvest` data, find all distinct vegetable varieties that have "er" or "ar" in their name. HINT: `str_detect()` with an "or" statement (use the | for "or") and `distinct()`.
 
 ```{r}
-
+garden_harvest%>%
+  mutate(detect = str_detect(variety,"er|ar"))%>%
+  filter(detect == "TRUE")%>%
+  distinct(variety)
 ```
 
 
@@ -218,7 +229,7 @@ Trips%>%
 ```{r}
 Trips%>%
   mutate(time = hour(sdate)+minute(sdate)/60)%>%
-  mutate(day = wday(sdate))%>%
+  mutate(day = weekdays(sdate))%>%
   ggplot(aes(time))+
   geom_density(color="darkblue", fill="lightblue", alpha = 0.5)+
   facet_wrap(~day)+
@@ -234,7 +245,7 @@ The variable `client` describes whether the renter is a regular user (level `Reg
 ```{r}
 Trips%>%
   mutate(time = hour(sdate)+minute(sdate)/60)%>%
-  mutate(day = wday(sdate))%>%
+  mutate(day = weekdays(sdate))%>%
   ggplot(aes(time, fill = client))+
   geom_density( alpha = 0.5, color = NA)+
   facet_wrap(~day)+
@@ -246,7 +257,7 @@ Trips%>%
 ```{r}
 Trips%>%
   mutate(time = hour(sdate)+minute(sdate)/60)%>%
-  mutate(day = wday(sdate))%>%
+  mutate(day = weekdays(sdate))%>%
   ggplot(aes(time, fill = client))+
   geom_density( alpha = 0.5, color = NA, position = position_stack())+
   facet_wrap(~day)+
@@ -259,7 +270,7 @@ This graph can better illustrate the relationship between two groups of customer
   
 ```{r}
 Trips%>%
-  mutate(weekend=ifelse(wday(sdate)%in%c(1,7), "weekend", "weekday"))%>%
+  mutate(weekend=ifelse(weekdays(sdate)%in%c("Saturday","Sunday"), "weekend", "weekday"))%>%
   mutate(time = hour(sdate)+minute(sdate)/60)%>%
   ggplot(aes(time, fill = client))+
   geom_density( alpha = 0.5, color = NA, position = position_stack())+
@@ -271,7 +282,7 @@ Trips%>%
   
 ```{r}
 Trips%>%
-  mutate(weekend=ifelse(wday(sdate)%in%c(1,7), "weekend", "weekday"))%>%
+  mutate(weekend=ifelse(weekdays(sdate)%in%c("Saturday","Sunday"), "weekend", "weekday"))%>%
   mutate(time = hour(sdate)+minute(sdate)/60)%>%
   ggplot(aes(time, fill = weekend))+
   geom_density( alpha = 0.5, color = NA, position = position_stack())+
@@ -300,24 +311,69 @@ Trips%>%
   16. Only 14.4% of the trips in our data are carried out by casual users. Create a plot that shows which area(s) have stations with a much higher percentage of departures by casual users. What patterns do you notice? (Again, we'll improve this next week when we learn about maps).
   
 ```{r}
-
+Trips%>%
+  left_join(Stations, 
+            by = c ("sstation" = "name"))%>%
+  group_by(lat,long)%>%
+  summarize(n = n(), prop = mean(client == "Casual"))%>%
+  ggplot(aes(x = lat, y = long, color = prop))+
+  geom_point()+
+  labs(x = "latitude",y = "longtitude", title = "% of departures for causal and registered riders")
+  
+  
 ```
+
+It seems that the causal riders are more likely to departure at stations whoes latitude is between 38.85 and 38.9 and the longtitude is between -77.1 and -77.
+
   
 ### Spatiotemporal patterns
 
   17. Make a table with the ten station-date combinations (e.g., 14th & V St., 2014-10-14) with the highest number of departures, sorted from most departures to fewest. Save this to a new dataset and print out the dataset. Hint: `as_date(sdate)` converts `sdate` from date-time format to date format. 
-  
+
 ```{r}
+New<- Trips%>%
+  mutate(date = as_date(sdate))%>%
+  group_by(sstation,date)%>%
+  count()%>%
+  arrange(desc(n))%>%
+  head(10)
+New
+
 
 ```
+  
+  
   
   18. Use a join operation to make a table with only those trips whose departures match those top ten station-date combinations from the previous part.
   
+  
 ```{r}
+Trips%>%
+  mutate(date = as_date(sdate))%>%
+  right_join(New,
+             by = c("sstation","date"))
+```
+  
+  
+  
+
+  
+  19. Build on the code from the previous problem (ie. copy that code below and then %>% into the next step.) and group the trips by client type and day of the week (use the name, not the number). Find the proportion of trips by day within each client type (ie. the proportions for all 7 days within each client type add up to 1). Display your results so day of week is a column and there is a column for each client type. Interpret your results.
+  
+  
+```{r}
+Trips%>%
+  mutate(date = as_date(sdate))%>%
+  right_join(New,
+             by = c("sstation","date"))%>%
+  mutate(day =  weekdays(date))%>%
+  group_by(client,day)%>%
+  summarize(n = n())
+
+
 
 ```
   
-  19. Build on the code from the previous problem (ie. copy that code below and then %>% into the next step.) and group the trips by client type and day of the week (use the name, not the number). Find the proportion of trips by day within each client type (ie. the proportions for all 7 days within each client type add up to 1). Display your results so day of week is a column and there is a column for each client type. Interpret your results.
 
 **DID YOU REMEMBER TO GO BACK AND CHANGE THIS SET OF EXERCISES TO THE LARGER DATASET? IF NOT, DO THAT NOW.**
 
@@ -330,6 +386,18 @@ Trips%>%
 This problem uses the data from the Tidy Tuesday competition this week, `kids`. If you need to refresh your memory on the data, read about it [here](https://github.com/rfordatascience/tidytuesday/blob/master/data/2020/2020-09-15/readme.md). 
 
   21. In this exercise, you are going to try to replicate the graph below, created by Georgios Karamanis. I'm sure you can find the exact code on GitHub somewhere, but **DON'T DO THAT!** You will only be graded for putting an effort into this problem. So, give it a try and see how far you can get without doing too much googling. HINT: use `facet_geo()`. The graphic won't load below since it came from a location on my computer. So, you'll have to reference the original html on the moodle page to see it.
+  
+```{r}
+kids%>%
+  group_by(state, year)%>%
+  summarize(money = sum(inf_adj_perchild))%>%
+  filter(year %in% c("1998","2016"))%>%
+  ggplot(aes(x = year, y = money))+
+  geom_line()+
+  facet_geo(~state)
+ 
+```
+  
   
 ![](kids_data_karamanis.jpeg)
 
