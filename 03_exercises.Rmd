@@ -2,14 +2,14 @@
 title: 'Weekly Exercises #3'
 author: "Debbie Sun"
 output:
-  pdf_document:
-    toc: yes
   html_document:
     code_download: yes
     df_print: paged
     keep_md: yes
     toc: yes
     toc_float: yes
+  pdf_document:
+    toc: yes
 ---
 
 
@@ -165,14 +165,6 @@ garden_harvest%>%
 
 In this activity, you'll examine some factors that may influence the use of bicycles in a bike-renting program.  The data come from Washington, DC and cover the last quarter of 2014.
 
-<center>
-
-![A typical Capital Bikeshare station. This one is at Florida and California, next to Pleasant Pops.](https://www.macalester.edu/~dshuman1/data/112/bike_station.jpg){300px}
-
-
-![One of the vans used to redistribute bicycles to different stations.](https://www.macalester.edu/~dshuman1/data/112/bike_van.jpg){300px}
-
-</center>
 
 Two data tables are available:
 
@@ -403,6 +395,6 @@ kids%>%
 ```
   
   
-![](kids_data_karamanis.jpeg)
+
 
 **DID YOU REMEMBER TO UNCOMMENT THE OPTIONS AT THE TOP?**
